@@ -5,6 +5,8 @@ Based on the "Russell's FASTLEDs" project by @russp81, which is in turn based on
 
 It seemed necessary to name the thing after Clark Griswold, but really just to differentiate this fork from the originals.
 
+![Clark Griswold](http://i.giphy.com/gB9wIPXav2Ryg.gif)
+
 @russp81 mixed the work of @toblum with the @FastLED (FastLED library 3.1.3 as of this writing), the colorjs colorpicker, color spectrums created via FastLED Palette Knife, and some additional strip animations.
 
 Improvements:
