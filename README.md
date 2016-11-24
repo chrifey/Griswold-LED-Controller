@@ -10,10 +10,11 @@ It seemed necessary to name the thing after Clark Griswold, but really just to d
 @russp81 mixed the work of @toblum with the @FastLED (FastLED library 3.1.3 as of this writing), the colorjs colorpicker, color spectrums created via FastLED Palette Knife, and some additional strip animations.
 
 Improvements:
-	- Added ArduinoOTA support so I can update the firmware over WiFi, which will be important when its installed outside.
-	- Added the ability to store the settings in EEPROM and restore on boot.
-	- Merged the jscolor interface into the original McLighting interface
-	- Updated the McLighting interface to retrieve the current settings from the device, and update the UI with the current settings, rather than always default to the defaults.
+
+- Added ArduinoOTA support so I can update the firmware over WiFi, which will be important when its installed outside.
+- Added the ability to store the settings in EEPROM and restore on boot.
+- Merged the jscolor interface into the original McLighting interface
+- Updated the McLighting interface to retrieve the current settings from the device, and update the UI with the current settings, rather than always default to the defaults.
 
 
 Russell's FASTLEDs:
