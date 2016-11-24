@@ -16,11 +16,13 @@
 			<div class="nav-wrapper container"><a id="logo-container" href="#" class="brand-logo">McLighting</a>
 				<ul class="right hide-on-med-and-down">
 					<li><a href="#" class="mc-navlink" data-pane="pane1">Wheel</a></li>
+					<li><a href="#" class="mc-navlink" data-pane="pane3">Gradient</a></li>
 					<li><a href="#" class="mc-navlink" data-pane="pane2">Modes</a></li>
 				</ul>
 
 				<ul id="nav-mobile" class="side-nav">
 					<li><a href="#" class="mc-navlink" data-pane="pane1">Wheel</a></li>
+					<li><a href="#" class="mc-navlink" data-pane="pane3">Gradient</a></li>
 					<li><a href="#" class="mc-navlink" data-pane="pane2">Modes</a></li>
 				</ul>
 				
@@ -73,6 +75,7 @@
 		
 		<div class="container mc_pane hide" id="pane2">
 			<div class="section">
+				<p>Show Mode</p>
 				<div class="row">
 					<div class="col s12 m6 l3 btn_grid">
 						<button class="btn waves-effect waves-light btn_mode" name="action" data-mode="off">Off
@@ -81,7 +84,7 @@
 					</div>
 
 					<div class="col s12 m6 l3 btn_grid">
-						<a class="btn waves-effect waves-light btn_mode" name="action" data-mode="all">All
+						<a class="btn -effectwaves waves-light btn_mode" name="action" data-mode="all">All
 							<i class="material-icons right">send</i>
 						</a>
 					</div>
@@ -144,22 +147,42 @@
 						<a class="btn waves-effect waves-light btn_mode" name="action" data-mode="theaterchase">THEATRE CHASE
 							<i class="material-icons right">send</i>
 						</a>
-					</div>							
-						
+					</div>		
+				</div>	
+			</div>	
+			<div class="section">
+				<p>Glitter Mode</p>			
+				<div class="row">						
 					<div class="col s12 m6 l3 btn_grid">
-						<a class="btn waves-effect waves-light btn_mode" name="action" data-mode="add_glitter">ADD GLITTER
+						<a class="btn waves-effect waves-light btn_glitter_mode" name="action" data-mode="add_glitter">ADD GLITTER
 							<i class="material-icons right">send</i>
 						</a>
 					</div>
 					
 					<div class="col s12 m6 l3 btn_grid">
-						<a class="btn waves-effect waves-light btn_mode" name="action" data-mode="stop_glitter">STOP GLITTER
+						<a class="btn waves-effect waves-light btn_glitter_mode" name="action" data-mode="stop_glitter">STOP GLITTER
+							<i class="material-icons right">send</i>
+						</a>
+					</div>
+				</div>
+			</div>
+			<div class="section">
+				<p>Save Settings</p>			
+				<div class="row">						
+					<div class="col s12 m6 l3 btn_grid">
+						<a class="btn waves-effect waves-light btn_save" name="action">Save Settings
 							<i class="material-icons right">send</i>
 						</a>
 					</div>	
-					
+					<div class="col s12 m6 l3 btn_grid">
+						<a class="btn waves-effect waves-light btn_defaults" name="action">Restore Defaults
+							<i class="material-icons right">send</i>
+						</a>
+					</div>						
 				</div>
-				
+			</div>
+			<div class="section">
+				<p>Parameters</p>				
 				<div class="row">
 					<form class="col s12">
 						<div class="row">
@@ -231,6 +254,20 @@
 			</div>
 		</div>
 
+		<div class="container mc_pane hide" id="pane3">
+		    <div style="width:800px; height:800px; margin:0 auto;">
+		    	<br>
+    			toHEXString = <span id="hex-str"></span>
+    			<br />
+    			toRGBString = <span id="rgb-str"></span>
+    			<br />
+    			R, G, B = <span id="rgb"></span>
+    			<br />
+    			H, S, V = <span id="hsv"></span>
+    			<br />    		
+				<input id='jscolor_picker' readonly = "true" value="ffcc00" class="jscolor {onFineChange:'gradientPickerUpdate(this)',width:800, height:450, position:'bottom', borderColor:'#FFF', insetColor:'#FFF', backgroundColor:'#666'}">
+			</div>
+		</div>
 
 
 		<footer class="page-footer">
@@ -251,6 +288,7 @@
 		<script type="text/javascript" src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
 		<!--<script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.6/js/materialize.min.js"></script>-->
 		<script src="materialize.min.js"></script>
+		<script src="jscolor.js"></script>
 		<script type="text/javascript">(function($){
 $(function(){
 	  
@@ -272,18 +310,50 @@ $(function(){
 		console.log("Navigate to pane: ", $(this).data("pane"));
 		showPane($(this).data("pane"));
 	});
+
+	$('#get_status').on('click', function() {
+		wsSendCommand('$');
+	});
 	
 	function showPane(pane) {
 		$('.mc_pane').addClass('hide');
 		$('#' + pane).removeClass('hide');
 		$('.button-collapse').sideNav('hide');
 		
-		if (pane == "pane2") {
-			setMainColor();
+		//if (pane == "pane2") {
+			//setMainColor();
+			wsSendCommand('$'); // request status in JSON format.
+		//}
+
+		if (pane == "pane3") {
+			$('#jscolor_picker')[0].jscolor.show();
 		}
 	}
 	
-	
+	gradientPickerUpdate = function(picker) {
+		
+    	document.getElementById('hex-str').innerHTML = picker.toHEXString();
+    	document.getElementById('rgb-str').innerHTML = picker.toRGBString();
+
+    	document.getElementById('rgb').innerHTML =
+        	Math.round(picker.rgb[0]) + ', ' +
+        	Math.round(picker.rgb[1]) + ', ' +
+        	Math.round(picker.rgb[2]);
+
+    	document.getElementById('hsv').innerHTML =
+        	Math.round(picker.hsv[0]) + '&deg;, ' +
+        	Math.round(picker.hsv[1]) + '%, ' +
+        	Math.round(picker.hsv[2]) + '%';
+
+    	var red = Math.round(picker.rgb[0]);
+    	var green = Math.round(picker.rgb[1]);
+    	var blue = Math.round(picker.rgb[2]);
+        
+		var mainColorHex = componentToHex(red) + componentToHex(green) + componentToHex(blue);
+
+		wsSetAll(mainColorHex);
+	}
+
 	// ******************************************************************
 	// init()
 	// ******************************************************************
@@ -307,12 +377,48 @@ $(function(){
 
 		// Log messages from the server
 		connection.onmessage = function (e) {
-			console.log('WebSocket from server: ' + e.data);
+			if (e.data == "OK") {
+				console.log('WebSocket from server: ' + e.data);
+			} else if (e.data.charAt(0) == '{') {
+				console.log('status response' + e.data);
+				var obj = JSON.parse(e.data);
+				$("#rng_red").val(obj.color[0]);
+				$("#rng_green").val(obj.color[1]);
+				$("#rng_blue").val(obj.color[2]);
+
+				$("#rng_glitter_red").val(obj.glitter_color[0]);
+				$("#rng_glitter_green").val(obj.glitter_color[1]);
+				$("#rng_glitter_blue").val(obj.glitter_color[2]);	
+
+				$("#rng_FTBS").val(obj.ftb_speed);
+				$("#rng_FPS").val(obj.FPS);
+				$("#rng_show_length").val(obj.show_length);	
+				$("#rng_brightness").val(obj.brightness);
+				$("#rng_glitterdensity").val(obj.glitter_density);
+
+				$(".btn_mode").removeClass("blue");
+				$(".btn_mode").eq(obj.mode - 1).addClass("blue");  //-1 because of "HOLD" mode, not impl
+
+				$(".btn_glitter_mode").removeClass("blue");
+				$(".btn_glitter_mode").eq(!obj.glitter_on).addClass("blue");
+
+				updateStatusUI(null, obj.color);
+				$("#jscolor_picker")[0].jscolor.fromRGB(obj.color[0],obj.color[1],obj.color[2]);
+			}
+
 			ws_waiting = 0;
 		};
 	}
 	
 // ****************************MAIN MODE UPDATE FUNCTIONS*************************************************
+	$("#pane2").on("click", ".btn_defaults", function() {
+		wsSendCommand('`');
+	});
+
+	$("#pane2").on("click", ".btn_save", function() {
+		wsSendCommand('|');
+	});
+
 	$("#pane2").on("click", ".btn_mode", function() {
 		
 		var mode = $(this).attr("data-mode");
@@ -321,12 +427,21 @@ $(function(){
 	
 	 
 		setMode(mode, function() {
-		$(".btn_mode").removeClass("blue");
-		btn.addClass("blue");
+			$(".btn_mode").removeClass("blue");
+			btn.addClass("blue");
 		});
 	});
 
-	
+	$("#pane2").on("click", ".btn_glitter_mode", function() {
+		var mode = $(this).attr("data-mode");
+		var btn = $(this);
+	 
+		setMode(mode, function() {
+			$(".btn_glitter_mode").removeClass("blue");
+			btn.addClass("blue");
+		});
+	});
+
 	$("#pane2").on("change", ".update_colors", setMainColor);	
 	
 	$("#pane2").on("change", ".update_glittercolors", setGlitterColor);
@@ -360,6 +475,7 @@ $(function(){
 		
 		wsSendCommand("+" + glitterdensity);
 	});	
+
 	function setMode(mode, finish_funtion) {
 		var url = "http://" + host + "/" + mode;
 		console.log("Mode: ", mode);
@@ -519,12 +635,18 @@ $(function(){
 	function updateStatus(pos, color) {
 		var hexColor = rgbToHex(color);
 		wsSetAll(hexColor);
-		
+		updateStatusUI(pos, color);
+	}
+
+	// Removed from 'updateStatus' function because need a UI update  method without a wsSetAll call.
+	function updateStatusUI(pos, color) {
+		var hexColor = rgbToHex(color);
 		hexColor = "#" + hexColor;
 		
 		$('#status').css("backgroundColor", hexColor);
 		$('#status_color').text(hexColor + " - R=" + color[0] + ", G=" + color[1] + ", B=" + color[2]);
-		$('#status_pos').text("x: " + pos.x + " - y: " + pos.y);
+		if (pos)
+			$('#status_pos').text("x: " + pos.x + " - y: " + pos.y);		
 	}
 
 	//handle the touch event
@@ -554,7 +676,6 @@ $(function(){
 		//now do sth with the color rgbToHex(color);
 		//don't do stuff when #000000 (outside circle and lines
 	}
-
 
 	// ******************************************************************
 	// main

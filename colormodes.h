@@ -7,7 +7,7 @@
 void addGlitter( fract8 chanceOfGlitter) 
 {
   if( random8() < chanceOfGlitter) {
-    leds[ random16(NUM_LEDS) ] += CRGB(glitter_color.red, glitter_color.green, glitter_color.blue);
+    leds[ random16(NUM_LEDS) ] += CRGB(settings.glitter_color.red, settings.glitter_color.green, settings.glitter_color.blue);
   }
 }
 
@@ -15,37 +15,37 @@ void rainbow()
 {
   // FastLED's built-in rainbow generator
   fill_rainbow( leds, NUM_LEDS, gHue, 7);
-  if (GLITTER_ON == true){addGlitter(glitter_density);}
+  if (settings.glitter_on == true){addGlitter(settings.glitter_density);}
   //frame has been created, now show it
   FastLED.show();  
   // insert a delay to keep the framerate modest
-  FastLED.delay(int(float(500/FPS)));  
+  FastLED.delay(int(float(500/settings.fps)));  
 }
 
 void confetti() 
 {
   // random colored speckles that blink in and fade smoothly
-  fadeToBlackBy( leds, NUM_LEDS, ftb_speed);
+  fadeToBlackBy( leds, NUM_LEDS, settings.ftb_speed);
   int pos = random16(NUM_LEDS);
-  leds[pos] += CHSV( gHue + random8(64), 200, brightness);
-  if (GLITTER_ON == true){addGlitter(glitter_density);}  
+  leds[pos] += CHSV( gHue + random8(64), 200, settings.brightness);
+  if (settings.glitter_on == true){addGlitter(settings.glitter_density);}  
   //frame has been created, now show it
   FastLED.show();  
   // insert a delay to keep the framerate modest
-  FastLED.delay(int(float(1000/FPS)));  
+  FastLED.delay(int(float(1000/settings.fps)));  
 }
 
 void sinelon()
 {
   // a colored dot sweeping back and forth, with fading trails
-  fadeToBlackBy( leds, NUM_LEDS, ftb_speed);
+  fadeToBlackBy( leds, NUM_LEDS, settings.ftb_speed);
   int pos = beatsin16(13,0,NUM_LEDS);
-  leds[pos] += CHSV( gHue, 255, brightness);
-  if (GLITTER_ON == true){addGlitter(glitter_density);}
+  leds[pos] += CHSV( gHue, 255, settings.brightness);
+  if (settings.glitter_on == true){addGlitter(settings.glitter_density);}
   //frame has been created, now show it
   FastLED.show();  
   // insert a delay to keep the framerate modest
-  FastLED.delay(int(float(1000/FPS)));    
+  FastLED.delay(int(float(1000/settings.fps)));    
 }
 
 void bpm()
@@ -53,33 +53,33 @@ void bpm()
   // colored stripes pulsing at a defined Beats-Per-Minute (BPM)
   uint8_t BeatsPerMinute = 62;
   CRGBPalette16 palette = PartyColors_p;
-  uint8_t beat = beatsin8( BeatsPerMinute, 64, brightness);
+  uint8_t beat = beatsin8( BeatsPerMinute, 64, settings.brightness);
   for( int i = 0; i < NUM_LEDS; i++) { //9948
     leds[i] = ColorFromPalette(palette, gHue+(i*2), beat-gHue+(i*10));
   }
-  if (GLITTER_ON == true){addGlitter(glitter_density);}
+  if (settings.glitter_on == true){addGlitter(settings.glitter_density);}
 
   //frame has been created, now show it
   FastLED.show();  
   // insert a delay to keep the framerate modest
-  FastLED.delay(int(float(1000/FPS)));
+  FastLED.delay(int(float(1000/settings.fps)));
   
 }
 
 void juggle() {
   // eight colored dots, weaving in and out of sync with each other
-  fadeToBlackBy( leds, NUM_LEDS, ftb_speed);
+  fadeToBlackBy( leds, NUM_LEDS, settings.ftb_speed);
   int dothue = 0;
   for( int i = 0; i < 8; i++) {
-    leds[beatsin16(i+7,0,NUM_LEDS)] |= CHSV(dothue, 200, brightness);
+    leds[beatsin16(i+7,0,NUM_LEDS)] |= CHSV(dothue, 200, settings.brightness);
     dothue += 32;
   }
-  if (GLITTER_ON == true){addGlitter(glitter_density);}
+  if (settings.glitter_on == true){addGlitter(settings.glitter_density);}
 
   //frame has been created, now show it
   FastLED.show();  
   // insert a delay to keep the framerate modest
-  FastLED.delay(int(float(1000/FPS)));  
+  FastLED.delay(int(float(1000/settings.fps)));  
 }
 //******************************************************************************************
 //                     PALETTE ANIMATION FUNCTIONS
@@ -90,7 +90,7 @@ void FillLEDsFromPaletteColors(uint8_t colorIndex)
   
   for( int i = 0; i < NUM_LEDS; i++) {
     //leds[i] = ColorFromPalette( currentPalette, colorIndex + sin8(i*16), brightness);
-    leds[i] = ColorFromPalette( currentPalette, colorIndex, brightness);
+    leds[i] = ColorFromPalette( currentPalette, colorIndex, settings.brightness);
     if (anim_direction == "forward") {colorIndex += 3;}
     if (anim_direction == "back") {colorIndex -= 3;}
     
@@ -99,7 +99,7 @@ void FillLEDsFromPaletteColors(uint8_t colorIndex)
 
 void ChangePalettePeriodically(){
   
-  if (millis() - paletteMillis > (show_length*1000)){
+  if (millis() - paletteMillis > (settings.show_length*1000)){
     paletteMillis = millis();
 
     randomSeed(analogRead(0));
@@ -168,7 +168,7 @@ void palette_anims(){
   
   ChangePalettePeriodically();
     
-  uint8_t maxChanges = int(float(FPS/2)); 
+  uint8_t maxChanges = int(float(settings.fps/2)); 
   nblendPaletteTowardPalette(currentPalette, targetPalette, maxChanges);
 
   static uint8_t startIndex = 0;
@@ -178,12 +178,12 @@ void palette_anims(){
   
   FillLEDsFromPaletteColors(startIndex);
   
-  if (GLITTER_ON == true){addGlitter(glitter_density);}
+  if (settings.glitter_on == true){addGlitter(settings.glitter_density);}
 
   //frame has been created, now show it
   FastLED.show();  
   // insert a delay to keep the framerate modest
-  FastLED.delay(int(float(1000/FPS))); 
+  FastLED.delay(int(float(1000/settings.fps))); 
 }
 
 //*****************LED RIPPLE*****************************************************
@@ -211,7 +211,7 @@ void ripple() {
       currentBg--;
     }
     for(uint16_t l = 0; l < NUM_LEDS; l++) {
-      leds[l] = CHSV(currentBg, 255, brightness);         // strip.setPixelColor(l, Wheel(currentBg, 0.1));
+      leds[l] = CHSV(currentBg, 255, settings.brightness);         // strip.setPixelColor(l, Wheel(currentBg, 0.1));
     }
  
   if (step == -1) {
@@ -221,7 +221,7 @@ void ripple() {
   }
  
   if (step == 0) {
-    leds[center] = CHSV(color, 255, brightness);         // strip.setPixelColor(center, Wheel(color, 1));
+    leds[center] = CHSV(color, 255, settings.brightness);         // strip.setPixelColor(center, Wheel(color, 1));
     step ++;
   } 
   else {
@@ -240,23 +240,23 @@ void ripple() {
       step = -1;
     }
   }
-  if (GLITTER_ON == true){addGlitter(glitter_density);}  
+  if (settings.glitter_on == true){addGlitter(settings.glitter_density);}  
   
   //frame has been created, now show it
   FastLED.show();  
   // insert a delay to keep the framerate modest
-  FastLED.delay(int(float(1000/FPS)));
+  FastLED.delay(int(float(1000/settings.fps)));
 }
 
 //***************************END LED RIPPLE*****************************************************
 
 void comet(){
 
-  fadeToBlackBy(leds, NUM_LEDS, ftb_speed);
-  lead_dot = beatsin16(int(float(FPS/3)), 0, NUM_LEDS);
+  fadeToBlackBy(leds, NUM_LEDS, settings.ftb_speed);
+  lead_dot = beatsin16(int(float(settings.fps/3)), 0, NUM_LEDS);
   leds[lead_dot] = CHSV(dothue, 200, 255);  
   dothue += 8;
-  if (GLITTER_ON == true){addGlitter(glitter_density);}
+  if (settings.glitter_on == true){addGlitter(settings.glitter_density);}
   FastLED.show();
 }
 
@@ -264,15 +264,15 @@ void comet(){
 void theaterChase() {
   for (int q = 0; q < 3; q++) {
     for (int i = 0; i < NUM_LEDS; i = i + 3) {
-      leds[i+q] = CRGB(main_color.red,main_color.green,main_color.blue);  //turn every third pixel on
+      leds[i+q] = CRGB(settings.main_color.red,settings.main_color.green,settings.main_color.blue);  //turn every third pixel on
     }
     FastLED.show();
 
-    FastLED.delay(int(float(1000/FPS)));
+    FastLED.delay(int(float(1000/settings.fps)));
     
       for (int i = 0; i < NUM_LEDS; i = i + 3) {
         leds[i+q] = CRGB(0,0,0);      //turn every third pixel off
-        if (GLITTER_ON == true){addGlitter(glitter_density);}      
+        if (settings.glitter_on == true){addGlitter(settings.glitter_density);}      
       }
     }
 }

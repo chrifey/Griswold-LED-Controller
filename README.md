@@ -1,5 +1,21 @@
-# Russell's FASTLEDs
-I mixed the work of @toblum with the @FastLED (FastLED library 3.1.3 as of this writing), the colorjs colorpicker, color spectrums created via FastLED Palette Knife, and some additional strip animations (included in the Arduino Sketch above).
+# Jake's "Griswold" LED controller for Christmas Lights.
+
+I bought 1000 WS2811 nodes for my outdoor Christmas light installation this year.
+Based on the "Russell's FASTLEDs" project by @russp81, which is in turn based on the "McLighting" project by @toblum
+
+It seemed necessary to name the thing after Clark Griswold, but really just to differentiate this fork from the originals.
+
+@russp81 mixed the work of @toblum with the @FastLED (FastLED library 3.1.3 as of this writing), the colorjs colorpicker, color spectrums created via FastLED Palette Knife, and some additional strip animations.
+
+Improvements:
+	- Added ArduinoOTA support so I can update the firmware over WiFi, which will be important when its installed outside.
+	- Added the ability to store the settings in EEPROM and restore on boot.
+	- Merged the jscolor interface into the original McLighting interface
+	- Updated the McLighting interface to retrieve the current settings from the device, and update the UI with the current settings, rather than always default to the defaults.
+
+
+Russell's FASTLEDs:
+https://github.com/russp81/LEDLAMP_FASTLEDs
 
 FastLED 3.1.3 library:
 https://github.com/FastLED/FastLED
@@ -12,6 +28,8 @@ http://jscolor.com/
 
 FastLED Palette Knife:
 http://fastled.io/tools/paletteknife/
+
+# Portions of @russp81's original README
 
 If you aren't familiar with how to setup your ESP8266, see the readme on McLighting's git.  It's well written and should get you up and running.
 
