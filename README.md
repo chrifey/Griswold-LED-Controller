@@ -39,6 +39,9 @@ http://jscolor.com/
 FastLED Palette Knife:
 http://fastled.io/tools/paletteknife/
 
+RemoteDebug:
+https://github.com/JoaoLopesF/RemoteDebug
+
 # Portions of @russp81's original README
 
 If you aren't familiar with how to setup your ESP8266, see the readme on McLighting's git.  It's well written and should get you up and running.
