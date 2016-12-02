@@ -75,9 +75,13 @@ String psk;
 // ***************************************************************************
 void setup() {  
   
+  // Generate a pseduo-unique hostname
+  char hostname[strlen(HOSTNAME_PREFIX)+6];
+  uint16_t chipid = ESP.getChipId() & 0xFFFF;
+  sprintf(hostname, "%s-%04x",HOSTNAME_PREFIX, chipid);
+  
 #ifdef REMOTE_DEBUG
-  Debug.begin("Telnet_HostName");  // Initiaze the telnet server
-  Debug.begin(HOSTNAME);  // Initiaze the telnet server - HOST_NAME is the used
+  Debug.begin(hostname);  // Initiaze the telnet server - hostname is the used
                           // in MDNS.begin
   Debug.setResetCmdEnabled(true);  // Enable the reset command
 #endif
@@ -124,7 +128,7 @@ void setup() {
   // if it does not connect it starts an access point with the specified name
   // here  "AutoConnectAP"
   // and goes into a blocking loop awaiting configuration
-  if (!wifiManager.autoConnect(HOSTNAME)) {
+  if (!wifiManager.autoConnect(hostname)) {
     DBG_OUTPUT_PORT.println("failed to connect and hit timeout");
     // reset and try again, or maybe put it to deep sleep
     ESP.reset();
@@ -143,7 +147,7 @@ void setup() {
   // ***************************************************************************
   // Setup: WiFiManager
   // ***************************************************************************
-  ArduinoOTA.setHostname(HOSTNAME);
+  ArduinoOTA.setHostname(hostname);
   ArduinoOTA.onStart([]() {
     String type;
     if (ArduinoOTA.getCommand() == U_FLASH)
@@ -195,9 +199,9 @@ void setup() {
   // ***************************************************************************
   // Setup: MDNS responder
   // ***************************************************************************
-  MDNS.begin(HOSTNAME);
+  MDNS.begin(hostname);
   DBG_OUTPUT_PORT.print("Open http://");
-  DBG_OUTPUT_PORT.print(HOSTNAME);
+  DBG_OUTPUT_PORT.print(hostname);
   DBG_OUTPUT_PORT.println(".local/edit to see the file browser");
 
   // ***************************************************************************

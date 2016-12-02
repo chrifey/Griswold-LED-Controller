@@ -5,7 +5,7 @@
 #warning "Requires FastLED 3.1 or later; check github for latest code."
 #endif
 
-#define HOSTNAME "GRISWOLD"
+#define HOSTNAME_PREFIX "GRISWOLD"
 
 //#define REMOTE_DEBUG
 
