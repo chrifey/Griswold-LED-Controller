@@ -15,7 +15,14 @@ Improvements:
 - Added the ability to store the settings in EEPROM and restore on boot.
 - Merged the jscolor interface into the original McLighting interface
 - Updated the McLighting interface to retrieve the current settings from the device, and update the UI with the current settings, rather than always default to the defaults.
-
+- General code formatting clean-up.
+- Added “RemoteDebug” library for serial console over telnet. (Optional #define)
+- Fixed divide-by-zero error that occurs when fps=0 by preventing fps=0 from the UI.
+- Updates to the “animated palette” function, now you can select a single palette, or the existing randomized palette after time delay.
+- Rearchitected things a bit, now the colormodes.h functions render one single frame, and do not block the main thread.
+- Added back the wipe and tv animations from the original McLighting project (removed in LEDLAMP_FASTLEDs)
+- Modified TV animation to add some flicker (I like it better)
+- Added “effect brightness” setting to allow you to dim the main effect independently of glitter.
 
 Russell's FASTLEDs:
 https://github.com/russp81/LEDLAMP_FASTLEDs
