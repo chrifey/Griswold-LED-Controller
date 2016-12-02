@@ -13,6 +13,7 @@ void getArgs() {
     settings.main_color.blue = server.arg("b").toInt();
   }
   settings.fps = server.arg("d").toInt();
+  if (settings.fps == 0) settings.fps = 1; // prevent divide by zero!
 
   if (settings.main_color.red > 255) {
     settings.main_color.red = 255;
@@ -49,7 +50,7 @@ void getArgs() {
   DBG_OUTPUT_PORT.print(", Delay:");
   DBG_OUTPUT_PORT.print(settings.fps);
   DBG_OUTPUT_PORT.print(", Brightness:");
-  DBG_OUTPUT_PORT.println(settings.brightness);
+  DBG_OUTPUT_PORT.println(settings.overall_brightness);
   DBG_OUTPUT_PORT.print(", show_length:");
   DBG_OUTPUT_PORT.println(settings.show_length);
 }
@@ -99,7 +100,7 @@ void handleNotFound() {
 
 char* listStatusJSON() {
   char json[512];
-  snprintf(json, sizeof(json), "{\"mode\":%d, \"FPS\":%d,\"show_length\":%d, \"ftb_speed\":%d, \"brightness\":%d, \"color\":[%d, %d, %d], \"glitter_color\":[%d,%d,%d], \"glitter_density\":%d, \"glitter_on\":%d}", settings.mode, settings.fps, settings.show_length, settings.ftb_speed, settings.brightness, settings.main_color.red, settings.main_color.green, settings.main_color.blue, settings.glitter_color.red, settings.glitter_color.green, settings.glitter_color.blue, settings.glitter_density, settings.glitter_on);
+  snprintf(json, sizeof(json), "{\"mode\":%d, \"FPS\":%d,\"show_length\":%d, \"ftb_speed\":%d, \"overall_brightness\":%d, \"effect_brightness\":%d, \"color\":[%d, %d, %d], \"glitter_color\":[%d,%d,%d], \"glitter_density\":%d, \"glitter_on\":%d}", settings.mode, settings.fps, settings.show_length, settings.ftb_speed, settings.overall_brightness, settings.effect_brightness, settings.main_color.red, settings.main_color.green, settings.main_color.blue, settings.glitter_color.red, settings.glitter_color.green, settings.glitter_color.blue, settings.glitter_density, settings.glitter_on);
   return json;
 }
 
@@ -108,7 +109,7 @@ void getStatusJSON() {
   server.send ( 200, "application/json", listStatusJSON() );
 }
 
-void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght) {
+void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length) {
   switch (type) {
     case WStype_DISCONNECTED:
       DBG_OUTPUT_PORT.printf("WS: [%u] Disconnected!\n", num);
@@ -153,6 +154,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
         // decode delay data
         uint8_t d = (uint8_t) strtol((const char *) &payload[1], NULL, 10);
         settings.fps = ((d >> 0) & 0xFF);
+        if (settings.fps == 0) settings.fps = 1;   // Prevent divide by zero.
         DBG_OUTPUT_PORT.printf("WS: Set FPS: [%u]\n", settings.fps);
         webSocket.sendTXT(num, "OK");
       }
@@ -160,9 +162,17 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
       // # ==> Set brightness
       if (payload[0] == '%') {
         uint8_t b = (uint8_t) strtol((const char *) &payload[1], NULL, 10);
-        settings.brightness = ((b >> 0) & 0xFF);
-        DBG_OUTPUT_PORT.printf("WS: Set brightness to: [%u]\n", settings.brightness);
-        FastLED.setBrightness(settings.brightness);
+        settings.overall_brightness = ((b >> 0) & 0xFF);
+        DBG_OUTPUT_PORT.printf("WS: Set brightness to: [%u]\n", settings.overall_brightness);
+        FastLED.setBrightness(settings.overall_brightness);
+        webSocket.sendTXT(num, "OK");
+      }
+
+      // e ==> Set effect brightness
+      if (payload[0] == 'e') {
+        uint8_t b = (uint8_t) strtol((const char *) &payload[1], NULL, 10);
+        settings.effect_brightness = ((b >> 0) & 0xFF);
+        DBG_OUTPUT_PORT.printf("WS: Set effect brightness to: [%u]\n", settings.effect_brightness);
         webSocket.sendTXT(num, "OK");
       }
 
@@ -205,7 +215,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
         }
         FastLED.show();
         DBG_OUTPUT_PORT.printf("WS: Set all leds to main color: [%u] [%u] [%u]\n", settings.main_color.red, settings.main_color.green, settings.main_color.blue);
-        exit_func = true;
+        //exit_func = true;
         settings.mode = ALL;
         webSocket.sendTXT(num, "OK");
       }
@@ -228,7 +238,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
           }
           FastLED.show();
         }
-        exit_func = true;
+        //exit_func = true;
         settings.mode = ALL;
         webSocket.sendTXT(num, "OK");
       }
@@ -238,7 +248,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
         // we get mode data
         String str_mode = String((char *) &payload[0]);
 
-        exit_func = true;
+        //exit_func = true;
 
         if (str_mode.startsWith("=off")) {
           settings.mode = OFF;
@@ -265,6 +275,9 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
           settings.mode = BPM;
         }  
         if (str_mode.startsWith("=palette_anims")) {
+          if (settings.palette_ndx != -1) {
+            targetPalette = PaletteCollection[settings.palette_ndx];                    
+          }
           settings.mode = PALETTE_ANIMS;
         }   
         if (str_mode.startsWith("=ripple")) {
@@ -282,8 +295,11 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
         if (str_mode.startsWith("=stop_glitter")) {
           settings.glitter_on = false;
         }                                                                                   
-        if (str_mode.startsWith("=next_palette")) {
-          DBG_OUTPUT_PORT.println("Not_Implemented");
+        if (str_mode.startsWith("=wipe")) {
+          settings.mode = WIPE;
+        }                                                                                   
+        if (str_mode.startsWith("=tv")) {
+          settings.mode = TV;
         }                                                                                   
         DBG_OUTPUT_PORT.printf("Activated mode [%u]!\n", settings.mode);
         webSocket.sendTXT(num, "OK");
@@ -307,13 +323,44 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
         webSocket.sendTXT(num, json);
       }
 
-      // | ==> Save defaults.
+      // | ==> Save settings.
       if (payload[0] == '|') {
-        DBG_OUTPUT_PORT.printf("Save defaults.");
+        DBG_OUTPUT_PORT.printf("Save settings.");
         saveSettings();
         webSocket.sendTXT(num, "OK");      
       }
-      
+
+      // \ ==> Load settings.
+      if (payload[0] == '\\') {
+        DBG_OUTPUT_PORT.printf("Load settings.");
+        readSettings(false);
+        
+        String json = listStatusJSON();
+        DBG_OUTPUT_PORT.println(json);
+        webSocket.sendTXT(num, json);
+      }
+
+      // { ==> Change palette
+      if (payload[0] == '{') {
+        if (length == 2) {
+          if (payload[1] == '+') {            
+            settings.palette_ndx++;
+            if (settings.palette_ndx >= ARRAY_SIZE(PaletteCollection)) {
+              settings.palette_ndx = 0;              
+            }
+            DBG_OUTPUT_PORT.printf("Next palette: %d\n", settings.palette_ndx);            
+            currentPalette = targetPalette = PaletteCollection[settings.palette_ndx];
+          } else if (payload[1] == 'r') {
+            DBG_OUTPUT_PORT.printf("Randomize palette.\n");
+            settings.palette_ndx = -1;          
+            ChangePalettePeriodically(true);
+          } else if (payload[1] == 'd') {
+            DBG_OUTPUT_PORT.printf("Change direction: %d\n", anim_direction);
+            anim_direction = (DIRECTION)!anim_direction;
+          }
+        }
+        webSocket.sendTXT(num, "OK");
+      }
       break;
   }
 }
