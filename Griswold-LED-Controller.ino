@@ -152,14 +152,16 @@ void setup() {
     String type;
     if (ArduinoOTA.getCommand() == U_FLASH)
       type = "sketch";
-    else  // U_SPIFFS
+    else
       type = "filesystem";
-
-    // NOTE: if updating SPIFFS this would be the place to unmount SPIFFS using
-    // SPIFFS.end()
+      
+    SPIFFS.end(); // unmount SPIFFS for update.
     DBG_OUTPUT_PORT.println("Start updating " + type);
   });
-  ArduinoOTA.onEnd([]() { DBG_OUTPUT_PORT.println("\nEnd"); });
+  ArduinoOTA.onEnd([]() { 
+    DBG_OUTPUT_PORT.println("\nEnd... remounting SPIFFS");
+    SPIFFS.begin();
+  });
   ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
     DBG_OUTPUT_PORT.printf("Progress: %u%%\r", (progress / (total / 100)));
   });
@@ -190,9 +192,9 @@ void setup() {
   // tell FastLED about the LED strip configuration
   FastLED.addLeds<LED_TYPE, DATA_PIN, COLOR_ORDER>(leds, NUM_LEDS)
       .setCorrection(TypicalLEDStrip);
+  
   // FastLED.addLeds<LED_TYPE,DATA_PIN,CLK_PIN,COLOR_ORDER>(leds,
   // NUM_LEDS).setCorrection(TypicalLEDStrip);
-
   // set master brightness control
   FastLED.setBrightness(settings.overall_brightness);
 
@@ -400,6 +402,13 @@ void setup() {
     getArgs();
     getStatusJSON();
   });
+
+  
+  server.on("/palette_anims", []() {    
+    settings.mode = PALETTE_ANIMS;
+    getArgs();
+    getStatusJSON();
+  });
   
   server.begin();
 }
@@ -492,7 +501,10 @@ void loop() {
   unsigned long continueTime = millis() + int(float(1000 / settings.fps));  
   // Do our main loop functions, until we hit our wait time
   do {
+    //long int now = micros();
     FastLED.show();         // Display whats rendered.    
+    //long int later = micros();
+    //DBG_OUTPUT_PORT.printf("Show time is %ld\n", later-now);
     server.handleClient();  // Handle requests to the web server
     webSocket.loop();       // Handle websocket traffic
     ArduinoOTA.handle();    // Handle OTA requests.

@@ -279,7 +279,11 @@
 							<i class="material-icons right">send</i>
 						</a>
 					</div>
-										
+					<div class="col s12 m6 l2 btn_grid">
+						<a class="btn waves-effect waves-light btn_mode" name="action" data-mode="palette_anims">PALETTE ANIMS
+							<i class="material-icons right">send</i>
+						</a>
+					</div>					
 					<div class="col s12 m6 l3 btn_grid">
 						<a class="btn waves-effect waves-light btn_mode" name="action" data-mode="ripple">RIPPLE
 							<i class="material-icons right">send</i>
@@ -296,11 +300,6 @@
 							<i class="material-icons right">send</i>
 						</a>
 					</div>		
-					<div class="col s12 m6 l2 btn_grid">
-						<a class="btn waves-effect waves-light btn_mode" name="action" data-mode="palette_anims">PALETTE ANIMS
-							<i class="material-icons right">send</i>
-						</a>
-					</div>
 					<div class="col s12 m6 l2 btn_grid">
 						<a class="btn waves-effect waves-light btn_mode" name="action" data-mode="wipe">WIPE
 							<i class="material-icons right">send</i>
@@ -422,26 +421,29 @@
 								<label for="txt_brightness">Brightness (Overall)</label><br/>
 								<p class="range-field"><input type="range" id="rng_brightness" min="0" max="255" value="255" class="update_brightness" /></p>
 							</div>
-						</div>
-						
-            <div class="row">
+						</div>			
+            			<div class="row">
 							<div class="input-field col s12">
 								<label for="txt_show_length">Show Length ********How long to wait until switching in Mixed Show or Palette Anim Modes***********</label><br/>
 								<p class="range-field"><input type="range" id="rng_show_length" min="1" max="180" value="10" class="update_show_length" /></p>
 							</div>
 						</div>
-						
-            <div class="row">
+            			<div class="row">
 							<div class="input-field col s12">
 								<label for="txt_FTBS">Fade to Black Speed ********slow this down to slow the dim time of animations that use dimming********</label><br/>
 								<p class="range-field"><input type="range" id="rng_FTBS" min="1" max="100" value="50" class="update_FTBS" /></p>
 							</div>
-						</div>
-						
-            <div class="row">
+						</div>						
+            			<div class="row">
 							<div class="input-field col s12">
 								<label for="txt_glitterdensity">Glitter Density</label><br/>
 								<p class="range-field"><input type="range" id="rng_glitterdensity" min="1" max="200" value="50" class="update_glitterdensity" /></p>
+							</div>
+						</div>						
+            			<div class="row">
+							<div class="input-field col s12">
+								<label for="txt_confettidensity">Confetti Density</label><br/>
+								<p class="range-field"><input type="range" id="rng_confettidensity" min="1" max="200" value="50" class="update_confettidensity" /></p>
 							</div>
 						</div>						
 					</form>
@@ -609,6 +611,7 @@ $(function(){
 				$("#rng_brightness").val(obj.overall_brightness);
 				$("#rng_effect_brightness").val(obj.effect_brightness);
 				$("#rng_glitterdensity").val(obj.glitter_density);
+				$("#rng_confettidensity").val(obj.confetti_density);
 
 				$(".btn_mode").removeClass("blue");
 				$(".btn_mode").eq(obj.mode - 1).addClass("blue");  //-1 because of "HOLD" mode, not impl
@@ -715,6 +718,12 @@ $(function(){
 		var glitterdensity = $("#rng_glitterdensity").val();		
 		
 		wsSendCommand("+" + glitterdensity);
+	});	
+
+	$("#pane2").on("change", ".update_confettidensity", function() {
+		var confettidensity = $("#rng_confettidensity").val();		
+		
+		wsSendCommand("\"" + confettidensity);
 	});	
 
 	function setMode(mode, finish_funtion) {

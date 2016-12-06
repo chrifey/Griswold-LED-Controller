@@ -31,9 +31,10 @@ void rainbow() {
 void confetti() {
   // random colored speckles that blink in and fade smoothly
   fadeToBlackBy(leds, NUM_LEDS, settings.ftb_speed);
-  int pos = random16(NUM_LEDS);
-  leds[pos] += CHSV(gHue + random8(64), 200, settings.effect_brightness);
-
+  for (int x=0; x<settings.confetti_dens; x++) {
+    int pos = random16(NUM_LEDS);
+    leds[pos] += CHSV(gHue + random8(64), 200, settings.effect_brightness);
+  }
   // if (settings.glitter_on == true){addGlitter(settings.glitter_density);}
   // frame has been created, now show it
   // FastLED.show();
@@ -41,7 +42,7 @@ void confetti() {
   // FastLED.delay(int(float(1000/settings.fps)));
 }
 
-void sinelon() {
+void sinelon1() {
   // a colored dot sweeping back and forth, with fading trails
   fadeToBlackBy(leds, NUM_LEDS, settings.ftb_speed);
   int pos = beatsin16(13, 0, NUM_LEDS);
@@ -51,6 +52,39 @@ void sinelon() {
   // FastLED.show();
   // insert a delay to keep the framerate modest
   // FastLED.delay(int(float(1000/settings.fps)));
+}
+
+void sinelon() {
+  
+  static CRGB prevColor = CHSV(gHue, 255, settings.effect_brightness);
+  static CRGB currentColor = CHSV(gHue+60, 255, settings.effect_brightness);
+
+  fill_noise8 (leds, wipePos, 3, 0, 1, 2, 80, 1, millis());
+  for (int x=0; x<wipePos; x++) {
+    leds[x] = currentColor;
+  }
+  for (int x=wipePos; x<NUM_LEDS; x++) {
+    leds[x] = prevColor;
+  }
+
+  for (int x=0; x < 3; x++) {
+    int speckle = wipePos + random(-SPARKLE_SPREAD,SPARKLE_SPREAD);
+    if (speckle >= 0 && speckle < NUM_LEDS) {
+        leds[speckle] +=  CRGB(settings.glitter_color.red, settings.glitter_color.green,
+             settings.glitter_color.blue);
+    }
+    
+  }
+
+  wipePos+=WIPE_SPEED;
+
+  if (wipePos >= NUM_LEDS) {
+    wipePos = 0;
+    prevColor = currentColor;
+    gHue += 60;
+    currentColor = CHSV(gHue, 255, settings.effect_brightness);
+  }
+  
 }
 
 void bpm() {
@@ -88,13 +122,18 @@ void juggle() {
 //******************************************************************************************
 //                     PALETTE ANIMATION FUNCTIONS
 //******************************************************************************************
-void FillLEDsFromPaletteColors(uint8_t colorIndex) {
-  // uint8_t brightness = 255;
+#define GLITTER_WIPE 1
+int wipeInProgress = 0;
+
+void FillLEDsFromPaletteColors(CRGBPalette16 palette, uint8_t paletteStartIndex, uint16_t endingLEDIndex=0xFFFF) {
+  uint8_t colorIndex = paletteStartIndex;
 
   for (int i = 0; i < NUM_LEDS; i++) {
+    if (i > endingLEDIndex) return;  //stop condition
+    
     // leds[i] = ColorFromPalette( currentPalette, colorIndex + sin8(i*16),
     // brightness);
-    leds[i] = ColorFromPalette(currentPalette, colorIndex,
+    leds[i] = ColorFromPalette(palette, colorIndex,
                                settings.effect_brightness);
     if (anim_direction == FORWARD) {
       colorIndex += 3;
@@ -109,15 +148,21 @@ void ChangePalettePeriodically(bool forceNow) {
   if (forceNow || millis() - paletteMillis > (settings.show_length * 1000)) {
     paletteMillis = millis();
 
-    targetpicker = random(0, 22);
+    targetPaletteIndex = random(0, ARRAY_SIZE(PaletteCollection));
 
     currentPalette = targetPalette;
 
     anim_direction = (DIRECTION)!anim_direction; // DIRECTION enum allows flipping by boolean not.
 
-    targetPalette = PaletteCollection[targetpicker];
+    targetPalette = PaletteCollection[targetPaletteIndex];
 
-    DBG_OUTPUT_PORT.printf("New pallet index: %d\n", targetpicker);
+    DBG_OUTPUT_PORT.printf("New pallet index: %d\n", targetPaletteIndex);
+
+    if (GLITTER_WIPE) {
+       DBG_OUTPUT_PORT.println("Begin glitter wipe");
+       wipeInProgress = true;
+    }
+    
   }
 }
 
@@ -144,22 +189,40 @@ void palette_anims() {
 
   if (settings.palette_ndx == -1) ChangePalettePeriodically(false);
 
-  uint8_t maxChanges = int(float(settings.fps / 2));
-  nblendPaletteTowardPalette(currentPalette, targetPalette, maxChanges);
-
+  if (!GLITTER_WIPE) {
+    uint8_t maxChanges = int(float(settings.fps / 2));
+    nblendPaletteTowardPalette(currentPalette, targetPalette, maxChanges);
+  }
+  
   static uint8_t startIndex = 0;
 
   /* motion speed */
   startIndex = startIndex + 3;
 
-  FillLEDsFromPaletteColors(startIndex);
+  FillLEDsFromPaletteColors(currentPalette,startIndex);
 
-  // if (settings.glitter_on == true){addGlitter(settings.glitter_density);}
+  if (GLITTER_WIPE && wipeInProgress) {
+    if (wipePos >= NUM_LEDS) {
+      DBG_OUTPUT_PORT.println("End glitter wipe");
+      wipeInProgress = false;
+      wipePos = 0;
+      currentPalette = targetPalette;
+      currentPaletteIndex = targetPaletteIndex;
+      FillLEDsFromPaletteColors(targetPalette,startIndex);
+    } else {
+      FillLEDsFromPaletteColors(targetPalette,startIndex, wipePos);
+      for (int x=0; x < 3; x++) {
+        int speckle = wipePos + random(-SPARKLE_SPREAD,SPARKLE_SPREAD);
+        if (speckle >= 0 && speckle < NUM_LEDS) {
+            leds[speckle] +=  CRGB(settings.glitter_color.red, settings.glitter_color.green,
+                 settings.glitter_color.blue);
+        }  
+      }
+      wipePos+=WIPE_SPEED;
+    }
+  }
 
-  // frame has been created, now show it
-  // FastLED.show();
-  // insert a delay to keep the framerate modest
-  // FastLED.delay(int(float(1000/settings.fps)));
+  
 }
 
 //*****************LED

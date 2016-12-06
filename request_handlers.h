@@ -38,6 +38,15 @@ void getArgs() {
   if (server.arg("d") == "") {
     settings.fps = 40;
   }
+  if (server.arg("p") != "") {
+     uint8_t pal = (uint8_t) strtol(server.arg("p").c_str(), NULL, 10);
+     if (pal > ARRAY_SIZE(PaletteCollection)) 
+        pal = ARRAY_SIZE(PaletteCollection);
+             
+     settings.palette_ndx = pal;
+     currentPalette = targetPalette = PaletteCollection[settings.palette_ndx];
+     DBG_OUTPUT_PORT.printf("Palette is: %d", pal);
+  }
 
   DBG_OUTPUT_PORT.print("Mode: ");
   DBG_OUTPUT_PORT.print(settings.mode);
@@ -100,7 +109,7 @@ void handleNotFound() {
 
 char* listStatusJSON() {
   char json[512];
-  snprintf(json, sizeof(json), "{\"mode\":%d, \"FPS\":%d,\"show_length\":%d, \"ftb_speed\":%d, \"overall_brightness\":%d, \"effect_brightness\":%d, \"color\":[%d, %d, %d], \"glitter_color\":[%d,%d,%d], \"glitter_density\":%d, \"glitter_on\":%d}", settings.mode, settings.fps, settings.show_length, settings.ftb_speed, settings.overall_brightness, settings.effect_brightness, settings.main_color.red, settings.main_color.green, settings.main_color.blue, settings.glitter_color.red, settings.glitter_color.green, settings.glitter_color.blue, settings.glitter_density, settings.glitter_on);
+  snprintf(json, sizeof(json), "{\"mode\":%d, \"FPS\":%d,\"show_length\":%d, \"ftb_speed\":%d, \"overall_brightness\":%d, \"effect_brightness\":%d, \"color\":[%d, %d, %d], \"glitter_color\":[%d,%d,%d], \"glitter_density\":%d, \"glitter_on\":%d, \"confetti_density\":%d}", settings.mode, settings.fps, settings.show_length, settings.ftb_speed, settings.overall_brightness, settings.effect_brightness, settings.main_color.red, settings.main_color.green, settings.main_color.blue, settings.glitter_color.red, settings.glitter_color.green, settings.glitter_color.blue, settings.glitter_density, settings.glitter_on, settings.confetti_dens);
   return json;
 }
 
@@ -359,6 +368,14 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length
             anim_direction = (DIRECTION)!anim_direction;
           }
         }
+        webSocket.sendTXT(num, "OK");
+      }
+
+      // " ==> Confetti Density
+      if (payload[0] == '"') {
+        uint8_t b = (uint8_t) strtol((const char *) &payload[1], NULL, 10);
+        settings.confetti_dens = ((b >> 0) & 0xFF);
+        DBG_OUTPUT_PORT.printf("WS: Set confetti density to: [%u]\n", settings.confetti_dens);
         webSocket.sendTXT(num, "OK");
       }
       break;

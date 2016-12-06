@@ -7,13 +7,13 @@
 
 #define HOSTNAME_PREFIX "GRISWOLD"
 
-//#define REMOTE_DEBUG
+#define REMOTE_DEBUG
 
 #define DATA_PIN 5
 //#define CLK_PIN   4
 #define LED_TYPE WS2811
 #define COLOR_ORDER RGB
-#define NUM_LEDS 50
+#define NUM_LEDS 800
 CRGB leds[NUM_LEDS];
 
 #define ARRAY_SIZE(A) (sizeof(A) / sizeof((A)[0]))
@@ -33,7 +33,7 @@ enum MODE { HOLD,
     THEATERCHASE,
     WIPE,
     TV };
-
+    
 enum DIRECTION {
   BACK = 0,
   FORWARD = 1, };
@@ -52,12 +52,14 @@ long paletteMillis = 0; // Global variable for timechecking color palette shifts
 //bool GLITTER_ON = false;        // Global to add / remove glitter to any animation
 
 //******Palette Animation Globals*******************************************
-uint8_t targetpicker;
+uint8_t targetPaletteIndex;
+uint8_t currentPaletteIndex;
 uint8_t colorIndex;
 DIRECTION anim_direction = FORWARD;
 CRGBPalette16 currentPalette;
 CRGBPalette16 targetPalette;
 TBlendType currentBlending;
+
 //***************************************************************************
 
 //***************RIPPLE******************************************************

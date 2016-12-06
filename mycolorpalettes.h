@@ -1038,6 +1038,24 @@ DEFINE_GRADIENT_PALETTE( water1_gp ) {
   255,   1,  1, 46
 };
 
+// Gradient palette "christmas_candy_gp", originally from
+// http://soliton.vm.bytemark.co.uk/pub/cpt-city/ocal/tn/christmas-candy.png.index.html
+// converted for FastLED with gammas (2.6, 2.2, 2.5)
+// Size: 44 bytes of program space.
+
+DEFINE_GRADIENT_PALETTE( christmas_candy_gp ) {
+    0, 255,255,255,
+   25, 255,  0,  0,
+   51, 255,255,255,
+   76,   0, 55,  0,
+  102, 255,255,255,
+  127, 255,  0,  0,
+  153, 255,255,255,
+  178,   0, 55,  0,
+  204, 255,255,255,
+  229, 255,  0,  0,
+  255, 255,255,255};
+
 const CRGBPalette16 PaletteCollection[] FL_PROGMEM = { bhw1_29_gp, 
                                       bhw1_purplered_gp,
                                       bhw1_sunconure_gp,
@@ -1061,5 +1079,6 @@ const CRGBPalette16 PaletteCollection[] FL_PROGMEM = { bhw1_29_gp,
                                       faewing3_gp,
                                       starrynite_gp,
                                       blueeyedgal_gp,
-                                      water1_gp  };
+                                      water1_gp,
+                                      christmas_candy_gp };
 
