@@ -3,10 +3,13 @@
 // ***************************************************************************
 //#include "definitions.h"
 
+char* listStatusJSON();
+
+extern WebSocketsServer webSocket;
+
 // These functions originally displayed the color using a call to FastLed.show()
 // This has been refactored out, theser functions now simply render into the
-// leds[] array
-// the FastLed.show() call happens in the main loop now.
+// leds[] array. The FastLed.show() call happens in the main loop now.
 // Furthermore, the 'add glitter' option also refactored out to the main loop.
 
 void addGlitter(fract8 chanceOfGlitter) {
@@ -42,7 +45,7 @@ void confetti() {
   // FastLED.delay(int(float(1000/settings.fps)));
 }
 
-void sinelon1() {
+void sinelon() {
   // a colored dot sweeping back and forth, with fading trails
   fadeToBlackBy(leds, NUM_LEDS, settings.ftb_speed);
   int pos = beatsin16(13, 0, NUM_LEDS);
@@ -52,39 +55,6 @@ void sinelon1() {
   // FastLED.show();
   // insert a delay to keep the framerate modest
   // FastLED.delay(int(float(1000/settings.fps)));
-}
-
-void sinelon() {
-  
-  static CRGB prevColor = CHSV(gHue, 255, settings.effect_brightness);
-  static CRGB currentColor = CHSV(gHue+60, 255, settings.effect_brightness);
-
-  fill_noise8 (leds, wipePos, 3, 0, 1, 2, 80, 1, millis());
-  for (int x=0; x<wipePos; x++) {
-    leds[x] = currentColor;
-  }
-  for (int x=wipePos; x<NUM_LEDS; x++) {
-    leds[x] = prevColor;
-  }
-
-  for (int x=0; x < 3; x++) {
-    int speckle = wipePos + random(-SPARKLE_SPREAD,SPARKLE_SPREAD);
-    if (speckle >= 0 && speckle < NUM_LEDS) {
-        leds[speckle] +=  CRGB(settings.glitter_color.red, settings.glitter_color.green,
-             settings.glitter_color.blue);
-    }
-    
-  }
-
-  wipePos+=WIPE_SPEED;
-
-  if (wipePos >= NUM_LEDS) {
-    wipePos = 0;
-    prevColor = currentColor;
-    gHue += 60;
-    currentColor = CHSV(gHue, 255, settings.effect_brightness);
-  }
-  
 }
 
 void bpm() {
@@ -122,7 +92,6 @@ void juggle() {
 //******************************************************************************************
 //                     PALETTE ANIMATION FUNCTIONS
 //******************************************************************************************
-#define GLITTER_WIPE 1
 int wipeInProgress = 0;
 
 void FillLEDsFromPaletteColors(CRGBPalette16 palette, uint8_t paletteStartIndex, uint16_t endingLEDIndex=0xFFFF) {
@@ -148,40 +117,57 @@ void ChangePalettePeriodically(bool forceNow) {
   if (forceNow || millis() - paletteMillis > (settings.show_length * 1000)) {
     paletteMillis = millis();
 
-    targetPaletteIndex = random(0, ARRAY_SIZE(PaletteCollection));
+    targetPaletteIndex = random(0, getPaletteCount());
 
     currentPalette = targetPalette;
 
     anim_direction = (DIRECTION)!anim_direction; // DIRECTION enum allows flipping by boolean not.
 
-    targetPalette = PaletteCollection[targetPaletteIndex];
+    loadPaletteFromFile(targetPaletteIndex, &targetPalette);
 
     DBG_OUTPUT_PORT.printf("New pallet index: %d\n", targetPaletteIndex);
 
-    if (GLITTER_WIPE) {
+    if (settings.glitter_wipe_on) {
        DBG_OUTPUT_PORT.println("Begin glitter wipe");
        wipeInProgress = true;
     }
-    
   }
 }
 
 void colorWipe() {
-  static uint16_t i = 0;
+  static CRGB prevColor = CHSV(gHue, 255, settings.effect_brightness);
+  static CRGB currentColor = CHSV(gHue+60, 255, settings.effect_brightness);
 
-  if (i >= NUM_LEDS) {
-    // Clear thes strip
-    for (i = 0; i < NUM_LEDS; i++) {
-      leds[i] = CRGB(0,0,0);
-    }
-    i = 0;  //reset for next wipe
+  // Wrap around if necessary
+  if (wipePos >= NUM_LEDS) {
+    wipePos = 0;
+    prevColor = currentColor;
+    gHue += 60;
+    currentColor = CHSV(gHue, 255, settings.effect_brightness);
+  }
+  
+  // Render the first half of the wipe
+  for (int x=0; x<wipePos; x++) {
+    leds[x] = currentColor;
+  }
+  // Render the second half
+  for (int x=wipePos; x<NUM_LEDS; x++) {
+    leds[x] = prevColor;
   }
 
-  leds[i] = CRGB(settings.main_color.red, settings.main_color.green,
-            settings.main_color.blue);
-
-  i++;
+  //Render the glitter at the intersection
+  if (settings.glitter_wipe_on) {
+    for (int x=0; x < 3; x++) {
+      int speckle = wipePos + random(-SPARKLE_SPREAD,SPARKLE_SPREAD);
+      if (speckle >= 0 && speckle < NUM_LEDS) {
+          leds[speckle] +=  CRGB(settings.glitter_color.red, settings.glitter_color.green,
+               settings.glitter_color.blue);
+      }    
+    }
+  }
   
+  // Advance for next frame
+  wipePos+=WIPE_SPEED;
 }
 
 void palette_anims() {
@@ -189,9 +175,20 @@ void palette_anims() {
 
   if (settings.palette_ndx == -1) ChangePalettePeriodically(false);
 
-  if (!GLITTER_WIPE) {
+  if (!settings.glitter_wipe_on) {
     uint8_t maxChanges = int(float(settings.fps / 2));
     nblendPaletteTowardPalette(currentPalette, targetPalette, maxChanges);
+
+    // Update the current palette if necessary-- and send to any connected clients.
+    if (currentPaletteIndex != targetPaletteIndex) {
+      currentPaletteIndex = targetPaletteIndex;
+    
+      // Send current palette name to the UI.
+      String name = getPaletteNameWithIndex(currentPaletteIndex);
+//      name.insert(0, "p");
+      //DBG_OUTPUT_PORT.println("p"+name);
+      webSocket.broadcastTXT("p"+name);
+    }
   }
   
   static uint8_t startIndex = 0;
@@ -201,13 +198,20 @@ void palette_anims() {
 
   FillLEDsFromPaletteColors(currentPalette,startIndex);
 
-  if (GLITTER_WIPE && wipeInProgress) {
+  if (settings.glitter_wipe_on && wipeInProgress) {
     if (wipePos >= NUM_LEDS) {
       DBG_OUTPUT_PORT.println("End glitter wipe");
       wipeInProgress = false;
       wipePos = 0;
       currentPalette = targetPalette;
       currentPaletteIndex = targetPaletteIndex;
+
+      // Send current palette name to the UI.
+      String name = getPaletteNameWithIndex(currentPaletteIndex);
+      //name.insert(0, "p");
+      //DBG_OUTPUT_PORT.println("p"+name);
+      webSocket.broadcastTXT("p"+name);
+      
       FillLEDsFromPaletteColors(targetPalette,startIndex);
     } else {
       FillLEDsFromPaletteColors(targetPalette,startIndex, wipePos);

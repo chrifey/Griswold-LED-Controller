@@ -23,8 +23,8 @@
 // Sub-modules of this application
 // ***************************************************************************
 #include "definitions.h"
-#include "mycolorpalettes.h"
 #include "eepromsettings.h"
+#include "palettes.h"
 #include "colormodes.h"
 
 // ***************************************************************************
@@ -63,13 +63,6 @@ void configModeCallback(WiFiManager *myWiFiManager) {
 #include "spiffs_webserver.h"    // must be included after the 'server' object
 #include "request_handlers.h"    // is declared.
 
-
-// ***************************************************************************
-// Globals
-// ***************************************************************************
-String ssid; //Hold on to the SSID and PSK for use in case reconnect is needed.
-String psk;
-
 // ***************************************************************************
 // MAIN
 // ***************************************************************************
@@ -97,9 +90,9 @@ void setup() {
 
   //********color palette setup stuff****************
   currentPalette = RainbowColors_p;
-  targetPalette = bhw1_purpgreen_gp;
+  loadPaletteFromFile(settings.palette_ndx, &targetPalette);
   currentBlending = LINEARBLEND;
-//**************************************************
+  //**************************************************
 
 #ifndef REMOTE_DEBUG
   DBG_OUTPUT_PORT.begin(115200);
@@ -134,9 +127,6 @@ void setup() {
     ESP.reset();
     delay(1000);
   }
-
-  ssid = WiFi.SSID();
-  psk = WiFi.psk();
 
   // if you get here you have connected to the WiFi
   DBG_OUTPUT_PORT.println("connected...yeey :)");
@@ -406,7 +396,17 @@ void setup() {
   
   server.on("/palette_anims", []() {    
     settings.mode = PALETTE_ANIMS;
-    getArgs();
+    if (server.arg("p") != "") {
+      uint8_t pal = (uint8_t) strtol(server.arg("p").c_str(), NULL, 10);
+      int numberOfPalettes = getPaletteCount();
+      if (pal > numberOfPalettes) 
+        pal = numberOfPalettes;
+             
+      settings.palette_ndx = pal;
+      loadPaletteFromFile(settings.palette_ndx, &targetPalette);
+      currentPalette = targetPalette; //PaletteCollection[settings.palette_ndx];
+      DBG_OUTPUT_PORT.printf("Palette is: %d", pal);
+    }
     getStatusJSON();
   });
   
@@ -525,6 +525,8 @@ void loop() {
     }
     
   } while (millis() < continueTime);
+
+  
 }
 
 void nextPattern() {

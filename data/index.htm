@@ -314,6 +314,7 @@
 			</div>	
 			<div class="section">
 				<p>Palette Animations</p>
+				<label class="palette_name"></label>
 				<div class="row">
 					<div class="col s12 m6 l2 btn_grid">
 						<a class="btn waves-effect waves-light btn_palette_setting" name="action" data-mode="next_palette">Next Palette
@@ -339,13 +340,20 @@
 						<a class="btn waves-effect waves-light btn_glitter_mode" name="action" data-mode="add_glitter">ADD GLITTER
 							<i class="material-icons right">send</i>
 						</a>
-					</div>
-					
+					</div>					
 					<div class="col s12 m6 l3 btn_grid">
 						<a class="btn waves-effect waves-light btn_glitter_mode" name="action" data-mode="stop_glitter">STOP GLITTER
 							<i class="material-icons right">send</i>
 						</a>
 					</div>
+				  <label>Glitter Wipe:</label><div class="switch">
+				    <label>
+				      Off
+				      <input type="checkbox" class="switch_glitter_wipe" id="switch_glitter_wipe">
+				      <span class="lever"></span>
+				      On
+				    </label>
+				  </div>
 				</div>
 			</div>
 			<div class="section">
@@ -621,6 +629,12 @@ $(function(){
 
 				updateStatusUI(null, obj.color);
 				$("#jscolor_picker")[0].jscolor.fromRGB(obj.color[0],obj.color[1],obj.color[2]);
+
+				$(".palette_name").text(obj.palette_name);
+				$("#switch_glitter_wipe")[0].checked = obj.glitter_wipe_on;
+			} else if (e.data.charAt(0) == 'p') {
+				console.log('Palette name message: \'' + e.data + '\'');
+				$(".palette_name").text(e.data.substring(1));
 			}
 
 			ws_waiting = 0;
@@ -724,6 +738,14 @@ $(function(){
 		var confettidensity = $("#rng_confettidensity").val();		
 		
 		wsSendCommand("\"" + confettidensity);
+	});	
+
+	$("#pane2").on("change", ".switch_glitter_wipe", function() {
+		var checked = $("#switch_glitter_wipe").prop('checked')		
+		if (checked)
+			wsSendCommand("=start_glitter_wipe");
+		else
+			wsSendCommand("=stop_glitter_wipe");
 	});	
 
 	function setMode(mode, finish_funtion) {

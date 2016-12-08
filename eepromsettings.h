@@ -19,7 +19,8 @@ typedef struct {
   uint8_t effect_brightness = 255;  // Brightness used for effect animations
   int8_t palette_ndx = -1; // Palette to use for PALETTE_ANIMS.  -1 is change periodically
   uint8_t confetti_dens = 1;  // Density for the confetti effect.  More confetti needed for longer strings.
-  uint8_t filler[47];  // in case adding data in config avoiding loosing current conf by bad crc
+  bool glitter_wipe_on = false;
+  uint8_t filler[46];  // in case adding data in config avoiding loosing current conf by bad crc
   uint16_t crc;
 } EEPROMSettings;
 #pragma pack(pop)
@@ -51,6 +52,7 @@ void loadDefaults() {
   settings.glitter_color = {128, 128, 128};
   settings.palette_ndx = -1;
   settings.confetti_dens = 1;
+  settings.glitter_wipe_on = false;
 }
 
 bool readSettings(bool clear_on_error) {

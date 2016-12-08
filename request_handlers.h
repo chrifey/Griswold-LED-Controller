@@ -12,9 +12,10 @@ void getArgs() {
     settings.main_color.green = server.arg("g").toInt();
     settings.main_color.blue = server.arg("b").toInt();
   }
-  settings.fps = server.arg("d").toInt();
-  if (settings.fps == 0) settings.fps = 1; // prevent divide by zero!
-
+  if (server.arg("d") != "") {
+    settings.fps = server.arg("d").toInt();
+    if (settings.fps == 0) settings.fps = 40; // prevent divide by zero!
+  }
   if (settings.main_color.red > 255) {
     settings.main_color.red = 255;
   }
@@ -33,19 +34,6 @@ void getArgs() {
   }
   if (settings.main_color.blue < 0) {
     settings.main_color.blue = 0;
-  }
-
-  if (server.arg("d") == "") {
-    settings.fps = 40;
-  }
-  if (server.arg("p") != "") {
-     uint8_t pal = (uint8_t) strtol(server.arg("p").c_str(), NULL, 10);
-     if (pal > ARRAY_SIZE(PaletteCollection)) 
-        pal = ARRAY_SIZE(PaletteCollection);
-             
-     settings.palette_ndx = pal;
-     currentPalette = targetPalette = PaletteCollection[settings.palette_ndx];
-     DBG_OUTPUT_PORT.printf("Palette is: %d", pal);
   }
 
   DBG_OUTPUT_PORT.print("Mode: ");
@@ -70,8 +58,8 @@ void handleMinimalUpload() {
   int min = sec / 60;
   int hr = min / 60;
 
-  snprintf ( temp, 1500,
-       "<!DOCTYPE html>\
+  snprintf_P ( temp, 1500,
+       PSTR("<!DOCTYPE html>\
 				<html>\
 					<head>\
 						<title>ESP8266 Upload</title>\
@@ -86,7 +74,7 @@ void handleMinimalUpload() {
 							<button>Upload</button>\
 						</form>\
 					</body>\
-				</html>",
+				</html>"),
              hr, min % 60, sec % 60
            );
   server.send ( 200, "text/html", temp );
@@ -109,7 +97,10 @@ void handleNotFound() {
 
 char* listStatusJSON() {
   char json[512];
-  snprintf(json, sizeof(json), "{\"mode\":%d, \"FPS\":%d,\"show_length\":%d, \"ftb_speed\":%d, \"overall_brightness\":%d, \"effect_brightness\":%d, \"color\":[%d, %d, %d], \"glitter_color\":[%d,%d,%d], \"glitter_density\":%d, \"glitter_on\":%d, \"confetti_density\":%d}", settings.mode, settings.fps, settings.show_length, settings.ftb_speed, settings.overall_brightness, settings.effect_brightness, settings.main_color.red, settings.main_color.green, settings.main_color.blue, settings.glitter_color.red, settings.glitter_color.green, settings.glitter_color.blue, settings.glitter_density, settings.glitter_on, settings.confetti_dens);
+  File file;
+  openPaletteFileWithIndex(currentPaletteIndex, &file); 
+  snprintf_P(json, sizeof(json), PSTR("{\"mode\":%d, \"FPS\":%d,\"show_length\":%d, \"ftb_speed\":%d, \"overall_brightness\":%d, \"effect_brightness\":%d, \"color\":[%d, %d, %d], \"glitter_color\":[%d,%d,%d], \"glitter_density\":%d, \"glitter_on\":%d, \"confetti_density\":%d, \"palette_name\": \"%s\", \"glitter_wipe_on\": %d}"), settings.mode, settings.fps, settings.show_length, settings.ftb_speed, settings.overall_brightness, settings.effect_brightness, settings.main_color.red, settings.main_color.green, settings.main_color.blue, settings.glitter_color.red, settings.glitter_color.green, settings.glitter_color.blue, settings.glitter_density, settings.glitter_on, settings.confetti_dens, file.name(), settings.glitter_wipe_on);
+  file.close();
   return json;
 }
 
@@ -285,7 +276,8 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length
         }  
         if (str_mode.startsWith("=palette_anims")) {
           if (settings.palette_ndx != -1) {
-            targetPalette = PaletteCollection[settings.palette_ndx];                    
+             currentPaletteIndex = settings.palette_ndx;
+             loadPaletteFromFile(settings.palette_ndx, &targetPalette);
           }
           settings.mode = PALETTE_ANIMS;
         }   
@@ -303,6 +295,12 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length
         }
         if (str_mode.startsWith("=stop_glitter")) {
           settings.glitter_on = false;
+        }                                                                                   
+        if (str_mode.startsWith("=start_glitter_wipe")) {
+          settings.glitter_wipe_on = true;
+        }                                                                                   
+        if (str_mode.startsWith("=stop_glitter_wipe")) {
+          settings.glitter_wipe_on = false;
         }                                                                                   
         if (str_mode.startsWith("=wipe")) {
           settings.mode = WIPE;
@@ -352,13 +350,17 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length
       // { ==> Change palette
       if (payload[0] == '{') {
         if (length == 2) {
-          if (payload[1] == '+') {            
+          if (payload[1] == '+') {
+            DBG_OUTPUT_PORT.printf("Current pallet_ndx=%d\n", settings.palette_ndx);      
             settings.palette_ndx++;
-            if (settings.palette_ndx >= ARRAY_SIZE(PaletteCollection)) {
+            int numberOfPalettes = getPaletteCount();
+            if (settings.palette_ndx >= numberOfPalettes) {
               settings.palette_ndx = 0;              
             }
+            currentPaletteIndex = settings.palette_ndx;
             DBG_OUTPUT_PORT.printf("Next palette: %d\n", settings.palette_ndx);            
-            currentPalette = targetPalette = PaletteCollection[settings.palette_ndx];
+            loadPaletteFromFile(settings.palette_ndx, &targetPalette);
+            currentPalette = targetPalette;          
           } else if (payload[1] == 'r') {
             DBG_OUTPUT_PORT.printf("Randomize palette.\n");
             settings.palette_ndx = -1;          
@@ -368,7 +370,9 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length
             anim_direction = (DIRECTION)!anim_direction;
           }
         }
-        webSocket.sendTXT(num, "OK");
+        String json = listStatusJSON();
+        DBG_OUTPUT_PORT.println(json);
+        webSocket.sendTXT(num, json);
       }
 
       // " ==> Confetti Density

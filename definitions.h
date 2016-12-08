@@ -1,4 +1,19 @@
 //#define FASTLED_ALLOW_INTERRUPTS 0
+
+
+#define FASTLED_USE_PROGMEM 1
+// Note, you need to patch FastLEDs in order to use this.  You'll get an
+// error related to <avr\pgmspace.h>. Saves more than 3k given the palettes
+//
+// Simply edit <fastled_progmem.h> and update the include (Line ~29):
+//      #if FASTLED_INCLUDE_PGMSPACE == 1
+//      #if (defined(__AVR__))
+//      #include <avr\pgmspace.h>
+//      #else
+//      #include <pgmspace.h>
+//      #endif
+//      #endif
+
 #define FASTLED_INTERRUPT_RETRY_COUNT 3
 #include "FastLED.h"
 #if defined(FASTLED_VERSION) && (FASTLED_VERSION < 3001000)
@@ -7,7 +22,7 @@
 
 #define HOSTNAME_PREFIX "GRISWOLD"
 
-#define REMOTE_DEBUG
+//#define REMOTE_DEBUG
 
 #define DATA_PIN 5
 //#define CLK_PIN   4
@@ -93,6 +108,10 @@ LEDState ledstates[NUM_LEDS]; // Get an array of led states to store the state o
 //LEDState main_color;                // Store the "main color" of the strip used in single color modes
 //LEDState glitter_color;             // Store the "glitter color" of the strip for glitter mode
 
+// Supporting the "Glitter Wipe" effect
+#define SPARKLE_SPREAD (_max(NUM_LEDS/80,3))
+#define WIPE_SPEED  (_max(NUM_LEDS/120,1))
+int16_t wipePos = 0;
 
 #ifdef REMOTE_DEBUG
 RemoteDebug Debug;
