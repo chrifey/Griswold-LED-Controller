@@ -9,8 +9,27 @@ It seemed necessary to name the thing after Clark Griswold, but really just to d
 
 @russp81 mixed the work of @toblum with the @FastLED (FastLED library 3.1.3 as of this writing), the colorjs colorpicker, color spectrums created via FastLED Palette Knife, and some additional strip animations.
 
-Improvements:
+# License
 
+As per the original [McLighting](https://github.com/toblum/McLighting) project, this project is released under the GNU LESSER GENERAL PUBLIC LICENSE Version 3, 29 June 2007.
+
+	Griswold is free software: you can redistribute it and/or modify
+	it under the terms of the GNU Lesser General Public License as 
+	published by the Free Software Foundation, either version 3 of 
+	the License, or (at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU Lesser General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Improvements
+
+- Palettes stored as binary files on SPIFFS.  See below for more information on this.
+- Display name of the current palette file in the web interface.
 - Added ArduinoOTA support so I can update the firmware over WiFi, which will be important when its installed outside.
 - Added the ability to store the settings in EEPROM and restore on boot.
 - Merged the jscolor interface into the original McLighting interface
@@ -41,6 +60,10 @@ http://fastled.io/tools/paletteknife/
 
 RemoteDebug:
 https://github.com/JoaoLopesF/RemoteDebug
+
+# Palettes on SPIFFS
+
+Normally, you use [PaletteKnife](http://fastled.io/tools/paletteknife/) to generate arrays with the palette info.  You then compile this data into your project.  I wanted to be able to update the palettes without recompiling, so I moved them to files in SPIFFS (/palettes directory).  There is a little python program that basically takes the logic from PaletteKnife and outputs a binary file with the palette data instead.  Load these binary files to SPIFFS using the [Arduino ESP8266 filesystem uploader](https://github.com/esp8266/arduino-esp8266fs-plugin) or manually.
 
 # Portions of @russp81's original README
 
