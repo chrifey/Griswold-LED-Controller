@@ -379,10 +379,16 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length
             if (settings.palette_ndx >= numberOfPalettes) {
               settings.palette_ndx = 0;              
             }
-            currentPaletteIndex = settings.palette_ndx;
-            DBG_OUTPUT_PORT.printf("Next palette: %d\n", settings.palette_ndx);            
+            
+            targetPaletteIndex = settings.palette_ndx;
             loadPaletteFromFile(settings.palette_ndx, &targetPalette);
-            currentPalette = targetPalette;          
+            
+            if (settings.glitter_wipe_on) {
+              wipeInProgress = true;
+            }
+            
+            DBG_OUTPUT_PORT.printf("Next palette: %d\n", settings.palette_ndx);            
+
           } else if (payload[1] == 'r') {
             DBG_OUTPUT_PORT.printf("Randomize palette.\n");
             settings.palette_ndx = -1;          

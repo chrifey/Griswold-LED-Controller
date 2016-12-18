@@ -207,8 +207,6 @@ void palette_anims() {
     
       // Send current palette name to the UI.
       String name = getPaletteNameWithIndex(currentPaletteIndex);
-//      name.insert(0, "p");
-      //DBG_OUTPUT_PORT.println("p"+name);
       webSocket.broadcastTXT("p"+name);
     }
   }
@@ -230,10 +228,7 @@ void palette_anims() {
 
       // Send current palette name to the UI.
       String name = getPaletteNameWithIndex(currentPaletteIndex);
-      //name.insert(0, "p");
-      //DBG_OUTPUT_PORT.println("p"+name);
-      webSocket.broadcastTXT("p"+name);
-      
+      webSocket.broadcastTXT("p"+name);      
       FillLEDsFromPaletteColors(targetPalette,startIndex);
     } else {
       FillLEDsFromPaletteColors(targetPalette,startIndex, wipePos);
