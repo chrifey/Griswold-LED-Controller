@@ -20,6 +20,8 @@
 // The LEDLAMP project is a fork of the McLighting Project at
 //        https://github.com/toblum/McLighting
 
+int paletteCount = 0;
+
 int getPaletteCount() {
   Dir dir = SPIFFS.openDir("/palettes");
   int palette_count = 0;

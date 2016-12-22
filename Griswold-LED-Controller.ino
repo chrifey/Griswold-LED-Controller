@@ -173,6 +173,7 @@ void setup() {
   ArduinoOTA.onEnd([]() { 
     DBG_OUTPUT_PORT.println("\nEnd... remounting SPIFFS");
     SPIFFS.begin();
+    paletteCount = getPaletteCount();
   });
   ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
     DBG_OUTPUT_PORT.printf("Progress: %u%%\r", (progress / (total / 100)));
@@ -420,9 +421,8 @@ void setup() {
     settings.mode = PALETTE_ANIMS;
     if (server.arg("p") != "") {
       uint8_t pal = (uint8_t) strtol(server.arg("p").c_str(), NULL, 10);
-      int numberOfPalettes = getPaletteCount();
-      if (pal > numberOfPalettes) 
-        pal = numberOfPalettes;
+      if (pal > paletteCount) 
+        pal = paletteCount;
              
       settings.palette_ndx = pal;
       loadPaletteFromFile(settings.palette_ndx, &targetPalette);
@@ -433,6 +433,8 @@ void setup() {
   });
   
   server.begin();
+
+  paletteCount = getPaletteCount();
 }
 
 void loop() {

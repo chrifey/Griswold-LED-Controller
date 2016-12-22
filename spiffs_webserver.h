@@ -95,6 +95,10 @@ void handleFileUpload() {
 			fsUploadFile.close();
 		DBG_OUTPUT_PORT.print("handleFileUpload Size: "); DBG_OUTPUT_PORT.println(upload.totalSize);
 	}
+
+  // Update the paletteCount in case someone uploaded one.
+  paletteCount = getPaletteCount();
+
 }
 
 void handleFileDelete() {
@@ -108,6 +112,10 @@ void handleFileDelete() {
 	SPIFFS.remove(path);
 	server.send(200, "text/plain", "");
 	path = String();
+
+  // Update the paletteCount in case someone deleted one.
+  paletteCount = getPaletteCount();
+
 }
 
 void handleFileCreate() {
@@ -126,6 +134,9 @@ void handleFileCreate() {
 		return server.send(500, "text/plain", "CREATE FAILED");
 	server.send(200, "text/plain", "");
 	path = String();
+
+  // Update the paletteCount in case someone created one.
+  paletteCount = getPaletteCount();
 }
 
 void handleFileList() {

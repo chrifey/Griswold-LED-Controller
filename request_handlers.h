@@ -375,8 +375,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length
           if (payload[1] == '+') {
             DBG_OUTPUT_PORT.printf("Current pallet_ndx=%d\n", settings.palette_ndx);      
             settings.palette_ndx++;
-            int numberOfPalettes = getPaletteCount();
-            if (settings.palette_ndx >= numberOfPalettes) {
+            if (settings.palette_ndx >= paletteCount) {
               settings.palette_ndx = 0;              
             }
             

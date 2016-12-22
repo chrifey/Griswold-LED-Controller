@@ -139,7 +139,7 @@ void ChangePalettePeriodically(bool forceNow) {
   if (forceNow || millis() - paletteMillis > (settings.show_length * 1000)) {
     paletteMillis = millis();
 
-    targetPaletteIndex = random(0, getPaletteCount());
+    targetPaletteIndex = random(0, paletteCount);
 
     currentPalette = targetPalette;
 
